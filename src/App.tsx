@@ -18,6 +18,8 @@ import axios from "axios";
 import "katex/dist/katex.min.css";
 import MarkdownWithMath from "./Markdown";
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
 // Answer length options
 type AnswerLength = "short" | "medium" | "large";
 
@@ -67,7 +69,7 @@ const App: React.FC = () => {
       formData.append("file", file);
       formData.append("size", answerLength);
 
-      const submitResponse = await fetch("https://localhost:7181/OcrChat/Submit", {
+      const submitResponse = await fetch(`${apiBaseUrl}/OcrChat/Submit`, {
         method: "POST",
         body: formData,
       });
@@ -83,7 +85,7 @@ const App: React.FC = () => {
       while (!pollResult) {
         try {
           await sleep(2000);
-          const response = await axios.get(`https://localhost:7181/OcrChat/Result/${requestId}`);
+          const response = await axios.get(`${apiBaseUrl}/OcrChat/Result/${requestId}`);
           pollResult = response.data;
         } catch {
           console.log("Retrying request...");
