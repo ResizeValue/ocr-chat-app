@@ -20,7 +20,6 @@ import MarkdownWithMath from "./Markdown";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-// Answer length options
 type AnswerLength = "short" | "medium" | "large";
 
 const App: React.FC = () => {
