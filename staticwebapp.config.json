@@ -1,0 +1,11 @@
+{
+    "routes": [
+      {
+        "route": "/*",
+        "headers": {
+          "X-Vite-API-Base-URL": "${VITE_API_BASE_URL}"
+        }
+      }
+    ]
+  }
+  
