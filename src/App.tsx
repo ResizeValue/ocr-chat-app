@@ -67,7 +67,7 @@ const App: React.FC = () => {
       formData.append("file", file);
       formData.append("size", answerLength);
 
-      const submitResponse = await fetch("https://localhost:7181/OcrChat/Submit", {
+      const submitResponse = await fetch("https://app-solveme-apfke0acfsc2cscv.westeurope-01.azurewebsites.net/OcrChat/Submit", {
         method: "POST",
         body: formData,
       });
@@ -83,7 +83,7 @@ const App: React.FC = () => {
       while (!pollResult) {
         try {
           await sleep(2000);
-          const response = await axios.get(`https://localhost:7181/OcrChat/Result/${requestId}`);
+          const response = await axios.get(`https://app-solveme-apfke0acfsc2cscv.westeurope-01.azurewebsites.net/OcrChat/Result/${requestId}`);
           pollResult = response.data;
         } catch {
           console.log("Retrying request...");
