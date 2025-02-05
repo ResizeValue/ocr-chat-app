@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -14,31 +14,49 @@ import {
 } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-
+import axios from "axios";
 import "katex/dist/katex.min.css";
 import MarkdownWithMath from "./Markdown";
-import axios from "axios";
 
 // Answer length options
 type AnswerLength = "short" | "medium" | "large";
 
 const App: React.FC = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
-  const [file, setFile] = useState<File | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [answerLength, setAnswerLength] = useState<AnswerLength>("medium");
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const storedLanguage = localStorage.getItem("selectedLanguage");
+    const storedAnswerLength = localStorage.getItem("answerLength");
+
+    if (storedLanguage) setSelectedLanguage(storedLanguage);
+    if (storedAnswerLength) setAnswerLength(storedAnswerLength as AnswerLength);
+  }, []);
+
+  // Save settings when they change
+  useEffect(() => {
+    localStorage.setItem("selectedLanguage", selectedLanguage);
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    localStorage.setItem("answerLength", answerLength);
+  }, [answerLength]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setFile(event.target.files[0]);
     }
   };
+
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!file || !prompt) return;
+    if (!file) return;
 
     setLoading(true);
     setResult(null);
@@ -49,8 +67,7 @@ const App: React.FC = () => {
       formData.append("file", file);
       formData.append("size", answerLength);
 
-      // Submit request to API
-      const submitResponse = await fetch("https://app-solveme-apfke0acfsc2cscv.westeurope-01.azurewebsites.net/OcrChat/Submit", {
+      const submitResponse = await fetch("https://localhost:7181/OcrChat/Submit", {
         method: "POST",
         body: formData,
       });
@@ -62,16 +79,13 @@ const App: React.FC = () => {
       const submitData = await submitResponse.json();
       const { requestId } = submitData;
 
-      // Poll for result
       let pollResult: string | null = null;
       while (!pollResult) {
         try {
           await sleep(2000);
-          const response = await axios.get(`https://app-solveme-apfke0acfsc2cscv.westeurope-01.azurewebsites.net/OcrChat/Result/${requestId}`);
+          const response = await axios.get(`https://localhost:7181/OcrChat/Result/${requestId}`);
           pollResult = response.data;
-          console.log(response);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e: unknown) {
+        } catch {
           console.log("Retrying request...");
         }
       }
@@ -105,14 +119,12 @@ const App: React.FC = () => {
           </Typography>
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
+            {/* Language Selector */}
             <FormControl fullWidth margin="normal">
-              <InputLabel id="language-label" sx={{ color: "gray" }}>
-                Select Language
-              </InputLabel>
+              <InputLabel id="language-label" sx={{ color: "gray" }}>Select Language</InputLabel>
               <Select
                 labelId="language-label"
                 id="language"
-                label="Select Language"
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 sx={{
@@ -127,15 +139,13 @@ const App: React.FC = () => {
               </Select>
             </FormControl>
 
+            {/* Answer Length Selector */}
             <FormControl fullWidth margin="normal">
-              <InputLabel id="answer-length-label" sx={{ color: "gray" }}>
-                Answer Length
-              </InputLabel>
+              <InputLabel id="answer-length-label" sx={{ color: "gray" }}>Answer Length</InputLabel>
               <Select
                 labelId="answer-length-label"
                 id="answer-length"
                 value={answerLength}
-                label="Answer Length"
                 onChange={(e) => setAnswerLength(e.target.value as AnswerLength)}
                 sx={{
                   color: "#ffffff",
@@ -143,12 +153,13 @@ const App: React.FC = () => {
                   "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "white" },
                 }}
               >
-                <MenuItem value="small">Short</MenuItem>
+                <MenuItem value="short">Short</MenuItem>
                 <MenuItem value="medium">Medium</MenuItem>
                 <MenuItem value="large">Large</MenuItem>
               </Select>
             </FormControl>
 
+            {/* File Upload */}
             <Button
               variant="contained"
               component="label"
@@ -171,6 +182,7 @@ const App: React.FC = () => {
               </Typography>
             )}
 
+            {/* Take Photo Button */}
             <Button
               variant="contained"
               fullWidth
@@ -185,28 +197,23 @@ const App: React.FC = () => {
             >
               Take a Photo
             </Button>
-
             <input id="camera-input" type="file" accept="image/*" capture="environment" hidden onChange={handleFileChange} />
 
+            {/* Submit Button */}
             <CardActions>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                sx={{ mt: 3, backgroundColor: "#6200ea", "&:hover": { backgroundColor: "#3700b3" } }}
-                disabled={loading}
-              >
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 3, backgroundColor: "#6200ea", "&:hover": { backgroundColor: "#3700b3" } }} disabled={loading}>
                 {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Submit"}
               </Button>
             </CardActions>
           </Box>
         </Card>
 
+        {/* Result Card */}
         {result && (
           <Card sx={{ mt: 4, p: 3, boxShadow: 3, borderRadius: 3, backgroundColor: "#2c2c2c", color: "#ffffff" }}>
             <Typography variant="h6">Result:</Typography>
             <Typography variant="body1" sx={{ fontWeight: "bold", mt: 1 }}>
-              {result && <MarkdownWithMath markdownContent={result}></MarkdownWithMath>}
+              {result && <MarkdownWithMath markdownContent={result} />}
             </Typography>
           </Card>
         )}
