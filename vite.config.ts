@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'dist', // ВАЖЛИВО: має відповідати output_location
+    outDir: 'dist',
   },
   optimizeDeps: {
     include: ['react-markdown', 'remark-math', 'rehype-katex'],
